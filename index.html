@@ -1,0 +1,770 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>T Tickler</title>
+  <style>
+    :root { --main-bg: #f0f0ff; }
+    html, body { height: 100%; min-height: 100%; }
+    body {
+      font-family: 'Comic Sans MS', cursive, sans-serif;
+      background: var(--main-bg);
+      background-attachment: fixed;
+      background-size: cover;
+      min-height: 100vh;
+      margin: 0;
+      color: #222;
+      transition: background 0.2s;
+    }
+    #main {
+      display: flex;
+      min-height: 100vh;
+      flex-direction: row;
+      width: 100vw;
+    }
+    #topbar {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      background: none;
+      box-shadow: none;
+      padding: 0 0 10px 0;
+      position: relative;
+      z-index: 2;
+    }
+    #settings-btn {
+      position: absolute;
+      top: 16px;
+      right: 24px;
+      background: #fff;
+      border: 2px solid #b3b3ff;
+      border-radius: 10px;
+      font-size: 1.2em;
+      padding: 6px 18px;
+      color: #4b4ded;
+      cursor: pointer;
+      z-index: 20;
+      transition: background 0.15s, border-color 0.15s;
+      box-shadow: 2px 2px 0 #b3b3ff44;
+    }
+    #settings-btn:hover { background: #e6e8fa; border-color: #7f8cff; }
+    #settings-modal {
+      display: none;
+      position: fixed;
+      left: 0; top: 0; width: 100vw; height: 100vh;
+      z-index: 99;
+      background: rgba(50,60,120,0.23);
+      align-items: center;
+      justify-content: center;
+    }
+    #settings-modal.open { display: flex; }
+    #settings-box {
+      background: #fff;
+      padding: 28px 34px 22px 34px;
+      border-radius: 13px;
+      box-shadow: 0 5px 35px #3a48a055;
+      min-width: 260px;
+      position: relative;
+      text-align: left;
+    }
+    #settings-box h2 {
+      margin-top: 0;
+      font-size: 1.5em;
+      color: #4b4ded;
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    .color-pick-row {
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+    }
+    .color-pick-row label {
+      margin-right: 16px;
+      font-size: 1.08em;
+      min-width: 125px;
+    }
+    .color-option {
+      width: 32px; height: 32px;
+      border: 2px solid #bbb6fa;
+      border-radius: 8px;
+      margin-right: 10px;
+      cursor: pointer;
+      transition: border-color 0.14s;
+      box-sizing: border-box;
+      display: inline-block;
+      background: #fff;
+      vertical-align: middle;
+      position: relative;
+    }
+    .color-option.selected {
+      border: 3px solid #4b4ded;
+    }
+    .color-option[data-color="red"]      { background: #ff2a2a; }
+    .color-option[data-color="orange"]   { background: #ff9900; }
+    .color-option[data-color="yellow"]   { background: #ffe100; }
+    .color-option[data-color="lime"]     { background: #a4f900; }
+    .color-option[data-color="green"]    { background: #33c233; }
+    .color-option[data-color="cyan"]     { background: #27e9e7; }
+    .color-option[data-color="blue"]     { background: #2a80ff; }
+    .color-option[data-color="indigo"]   { background: #6f41d4; }
+    .color-option[data-color="violet"]   { background: #b057c7; }
+    .color-option[data-color="pink"]     { background: #ff67cf; }
+    .color-option[data-color="magenta"]  { background: #ff00aa; }
+    .color-option[data-color="gold"]     { background: #ffd700; }
+    .color-option[data-color="white"]    { background: #fff; border: 2px solid #d5d5d5;}
+    .color-option[data-color="black"]    { background: #222; }
+    #settings-close {
+      position: absolute;
+      top: 12px;
+      right: 16px;
+      background: none;
+      border: none;
+      font-size: 1.3em;
+      color: #a4a4bf;
+      cursor: pointer;
+      transition: color 0.12s;
+    }
+    #settings-close:hover { color: #4b4ded; }
+    #t-container {
+      position: relative;
+      width: 280px;
+      height: 280px;
+      margin: 24px 0 0 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    #t-circle {
+      position: absolute;
+      left: 0; top: 0;
+      width: 100%;
+      height: 100%;
+      border: 8px solid #b3b3ff;
+      border-radius: 50%;
+      box-shadow: 0 0 22px #aeb3ff66, 0 0 0 #fff;
+      background: radial-gradient(circle at 60% 40%, #f7f8ff 60%, #e7eafd 100%);
+      z-index: 1;
+    }
+    #t-main {
+      font-size: 170px;
+      cursor: pointer;
+      user-select: none;
+      color: #4b4ded;
+      text-shadow: 0 2px 12px #aaa, 0 0 40px #aeb3ff;
+      transition: transform 0.08s;
+      z-index: 2;
+      display: block;
+      margin: 0 auto;
+      position: relative;
+    }
+    #t-main:active { transform: scale(0.96); filter: brightness(1.15); }
+    .cursor-anim {
+      position: absolute;
+      width: 32px;
+      height: 32px;
+      left: 50%;
+      top: 50%;
+      margin-left: -16px;
+      margin-top: -16px;
+      z-index: 3;
+      pointer-events: none;
+      transition: filter 0.18s;
+      filter: drop-shadow(0 2px 4px #8a8af099);
+    }
+    .cursor-anim img {
+      width: 32px;
+      height: 32px;
+      pointer-events: none;
+      image-rendering: crisp-edges;
+    }
+    #counter {
+      font-size: 2.2em;
+      margin: 7px 0 2px 0;
+      text-shadow: 1px 1px 0 #d3d6f7;
+    }
+    #stats {
+      font-size: 1.1em;
+      color: #505097;
+      margin-bottom: 16px;
+    }
+    #leftbar {
+      background: none;
+      min-width: 240px;
+      padding: 20px 0;
+      box-shadow: none;
+    }
+    #center {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      padding: 30px 0 0 0;
+      background: none;
+    }
+    #store-title {
+      font-weight: bold;
+      font-size: 1.3em;
+      margin-bottom: 18px;
+      color: #222278;
+      letter-spacing: 1px;
+    }
+    .producer {
+      background: #fff;
+      border: 2px solid #b3b3ff;
+      border-radius: 10px;
+      margin: 10px 0;
+      padding: 10px 10px 10px 60px;
+      min-height: 44px;
+      text-align: left;
+      position: relative;
+      font-size: 1.05em;
+      cursor: pointer;
+      transition: box-shadow 0.18s, background 0.15s;
+      box-shadow: 1px 1px 0 #b3b3ff;
+      width: 88%;
+      left: 0;
+    }
+    .producer:disabled {
+      filter: grayscale(0.6) brightness(0.97);
+      cursor: not-allowed;
+      opacity: 0.7;
+    }
+    .producer .icon {
+      position: absolute;
+      left: 10px;
+      top: 7px;
+      font-size: 2em;
+      pointer-events: none;
+      text-shadow: 0 0 2px #bbb6fa77;
+    }
+    .producer .prod-title {
+      font-weight: bold;
+      font-size: 1.1em;
+      color: #2e317a;
+    }
+    .producer .prod-cost {
+      float: right;
+      color: #7676a6;
+      font-size: 0.99em;
+    }
+    .producer .prod-owned {
+      display: block;
+      color: #5860b8;
+      font-size: 0.97em;
+      margin-top: 1px;
+    }
+    .upgrade-section {
+      margin: 40px auto 0 auto;
+      max-width: 440px;
+      padding: 0 18px;
+    }
+    .upgrade-title {
+      font-size: 1.17em;
+      color: #23236e;
+      font-weight: bold;
+      margin-bottom: 10px;
+      margin-top: 18px;
+      text-align: left;
+    }
+    .upgrade {
+      background: #fff;
+      border: 2px solid #7f8cff;
+      display: block;
+      padding: 11px 12px;
+      border-radius: 8px;
+      font-size: 1.08em;
+      margin: 9px auto;
+      width: 100%;
+      max-width: 380px;
+      color: #2e317a;
+      font-weight: bold;
+      text-align: left;
+      cursor: pointer;
+      box-shadow: 1px 1px 0 #b3b3ff;
+      transition: background .17s, border-color .14s;
+      position: relative;
+    }
+    .upgrade:disabled {
+      opacity: 0.7;
+      cursor: not-allowed;
+      filter: grayscale(0.6);
+    }
+    .upgrade .upg-cost {
+      float: right;
+      font-weight: normal;
+      color: #7676a6;
+      font-size: 0.99em;
+    }
+    #footer {
+      margin-top: 48px;
+      color: #5c6bc0;
+      letter-spacing: 1.5px;
+      text-align: center;
+      font-size: 1.05em;
+    }
+    @media (max-width: 900px) {
+      #main {flex-direction: column;}
+      #leftbar {min-width: 0; width: 100%; box-shadow: none;}
+      #center {padding: 20px 0;}
+      .producer {width: 94%;}
+      .upgrade {width: 97%;}
+      #settings-btn {right: 8px; top: 8px;}
+    }
+  </style>
+</head>
+<body>
+  <button id="settings-btn" title="Settings">⚙️</button>
+  <div id="settings-modal">
+    <div id="settings-box">
+      <button id="settings-close" aria-label="Close settings">&times;</button>
+      <h2>Settings</h2>
+      <div class="color-pick-row">
+        <label>Background 1:</label>
+        <span id="color-pick-1"></span>
+      </div>
+      <div class="color-pick-row">
+        <label>Background 2:</label>
+        <span id="color-pick-2"></span>
+      </div>
+    </div>
+  </div>
+  <div id="topbar">
+    <div id="t-container">
+      <div id="t-circle"></div>
+      <div id="t-main" title="Tickle the T!">T</div>
+      <div id="cursors"></div>
+    </div>
+    <div id="counter">Ts: 0</div>
+    <div id="stats">+1 per tickle, +0 per second</div>
+  </div>
+  <div id="main">
+    <div id="leftbar">
+      <div id="store-title">T Store</div>
+      <button class="producer" id="taplet-btn"><span class="icon">🖱️</span>
+        <span class="prod-title">Taplet</span>
+        <span class="prod-cost" id="taplet-cost"></span>
+        <span class="prod-owned" id="taplet-owned"></span>
+      </button>
+      <button class="producer" id="tutor-btn"><span class="icon">👨‍🏫</span>
+        <span class="prod-title">TutorT</span>
+        <span class="prod-cost" id="tutor-cost"></span>
+        <span class="prod-owned" id="tutor-owned"></span>
+      </button>
+      <button class="producer" id="terrarium-btn"><span class="icon">🪴</span>
+        <span class="prod-title">Terrarium</span>
+        <span class="prod-cost" id="terrarium-cost"></span>
+        <span class="prod-owned" id="terrarium-owned"></span>
+      </button>
+      <button class="producer" id="tunnel-btn"><span class="icon">🚇</span>
+        <span class="prod-title">Tunnel</span>
+        <span class="prod-cost" id="tunnel-cost"></span>
+        <span class="prod-owned" id="tunnel-owned"></span>
+      </button>
+      <button class="producer" id="turret-btn"><span class="icon">🏰</span>
+        <span class="prod-title">Turret</span>
+        <span class="prod-cost" id="turret-cost"></span>
+        <span class="prod-owned" id="turret-owned"></span>
+      </button>
+      <button class="producer" id="treasury-btn"><span class="icon">💰</span>
+        <span class="prod-title">Treasury</span>
+        <span class="prod-cost" id="treasury-cost"></span>
+        <span class="prod-owned" id="treasury-owned"></span>
+      </button>
+      <button class="producer" id="temple-btn"><span class="icon">🛕</span>
+        <span class="prod-title">Temple</span>
+        <span class="prod-cost" id="temple-cost"></span>
+        <span class="prod-owned" id="temple-owned"></span>
+      </button>
+      <button class="producer" id="transmitter-btn"><span class="icon">📡</span>
+        <span class="prod-title">Transmitter</span>
+        <span class="prod-cost" id="transmitter-cost"></span>
+        <span class="prod-owned" id="transmitter-owned"></span>
+      </button>
+    </div>
+    <div id="center">
+      <div class="upgrade-section">
+        <div class="upgrade-title">T Upgrades</div>
+        <div id="upgrade-list"></div>
+      </div>
+      <div id="footer">
+        Progress saves automatically.<br>
+        T-Tickler: The ultimate T-themed clicker. Tickle the T!
+      </div>
+    </div>
+  </div>
+  <script>
+    // Rainbow color options
+    const COLOR_OPTIONS = [
+      {name: 'Red', value: '#ff2a2a', key: 'red'},
+      {name: 'Orange', value: '#ff9900', key: 'orange'},
+      {name: 'Yellow', value: '#ffe100', key: 'yellow'},
+      {name: 'Lime', value: '#a4f900', key: 'lime'},
+      {name: 'Green', value: '#33c233', key: 'green'},
+      {name: 'Cyan', value: '#27e9e7', key: 'cyan'},
+      {name: 'Blue', value: '#2a80ff', key: 'blue'},
+      {name: 'Indigo', value: '#6f41d4', key: 'indigo'},
+      {name: 'Violet', value: '#b057c7', key: 'violet'},
+      {name: 'Pink', value: '#ff67cf', key: 'pink'},
+      {name: 'Magenta', value: '#ff00aa', key: 'magenta'},
+      {name: 'Gold', value: '#ffd700', key: 'gold'},
+      {name: 'White', value: '#fff', key: 'white'},
+      {name: 'Black', value: '#222', key: 'black'}
+    ];
+
+    // Cursor PNG data URL (32x32, standard "arrow" cursor, pixel perfect)
+    const CURSOR_PNG = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAByElEQVRYR+2XwUoCQRBFl2QyMJApB7A4A6Sko8gQ1AHQw0dCw2JQZJgM8gEewi8B2f8d2o7Fkuv6n3L7n/NbFRIV8h8QRwAaQwP4m5J1gF5k7cN4wDCiY4/6Qj+Zt7vZxDRBf2bQF8Q8k8rWjK1F/cY8eVhFWpQ8zqH3Y9r8r7o8A5cW4j7gCwQ6wJ5GJgN8U15TZwJzK9PcV+e1YB3wTf0r0z8wL6Bv0C+J+z4QDL6D8G9l4BFAqW6A4wX8wVzm7wEETiWQ9+1QG+KfMhzM1J4p6Fv8aXH/GnX7gF/6Tz8I0FG3Kcs1K+nM1J9lWf0bAh3AJj9n+S7zjya0o4QF4F9WQAAAABJRU5ErkJggg==";
+
+    // T-themed producer definitions
+    const producers = [
+      {
+        id: 'taplet', name: 'Taplet', icon: '🖱️', baseCost: 15, cost: 15, amount: 0, tps: 0.1, costGrowth: 1.15
+      },
+      {
+        id: 'tutor', name: 'TutorT', icon: '👨‍🏫', baseCost: 100, cost: 100, amount: 0, tps: 1, costGrowth: 1.15
+      },
+      {
+        id: 'terrarium', name: 'Terrarium', icon: '🪴', baseCost: 1100, cost: 1100, amount: 0, tps: 8, costGrowth: 1.15
+      },
+      {
+        id: 'tunnel', name: 'Tunnel', icon: '🚇', baseCost: 12000, cost: 12000, amount: 0, tps: 47, costGrowth: 1.15
+      },
+      {
+        id: 'turret', name: 'Turret', icon: '🏰', baseCost: 130000, cost: 130000, amount: 0, tps: 260, costGrowth: 1.15
+      },
+      {
+        id: 'treasury', name: 'Treasury', icon: '💰', baseCost: 1400000, cost: 1400000, amount: 0, tps: 1400, costGrowth: 1.15
+      },
+      {
+        id: 'temple', name: 'Temple', icon: '🛕', baseCost: 20000000, cost: 20000000, amount: 0, tps: 7800, costGrowth: 1.15
+      },
+      {
+        id: 'transmitter', name: 'Transmitter', icon: '📡', baseCost: 330000000, cost: 330000000, amount: 0, tps: 44000, costGrowth: 1.15
+      },
+    ];
+
+    // Even more T-themed upgrades!
+    let upgrades = [
+      {
+        id: "twin-tickle", name: "Twin Tickle", cost: 100, bought: false,
+        desc: "Doubles Ts per tickle.",
+        effect: (g) => { g.doubleTick = true; }
+      },
+      {
+        id: "t-booster", name: "T-Booster", cost: 2000, bought: false,
+        desc: "+5 Ts per tickle.",
+        effect: (g) => { g.turboTap = true; }
+      },
+      {
+        id: "thunder-taps", name: "Thunder Taps", cost: 9000, bought: false,
+        desc: "+25 Ts per tickle.",
+        effect: (g) => { g.clickStorm = true; }
+      },
+      {
+        id: "ttractor-beam", name: "Ttractor Beam", cost: 35000, bought: false,
+        desc: "All producers are 10% more efficient.",
+        effect: (g) => { g.tMagnet = true; }
+      },
+      {
+        id: "tickle-tempest", name: "Tickle Tempest", cost: 100000, bought: false,
+        desc: "Triples Ts per tickle for 30 seconds.",
+        effect: (g) => { g.tempestActive = true; g.tempestUntil = Date.now() + 30000; }
+      },
+      {
+        id: "titanium-taps", name: "Titanium Taps", cost: 222222, bought: false,
+        desc: "+50 Ts per tickle.",
+        effect: (g) => { g.titaniumTap = true; }
+      },
+      {
+        id: "turbo-tornado", name: "Turbo Tornado", cost: 333333, bought: false,
+        desc: "+100% Ts per second.",
+        effect: (g) => { g.tornado = true; }
+      },
+      {
+        id: "transcendence", name: "Transcendence", cost: 888888, bought: false,
+        desc: "All upgrades are 25% stronger.",
+        effect: (g) => { g.transcendence = true; }
+      },
+      {
+        id: "techno-boost", name: "Techno Boost", cost: 2000000, bought: false,
+        desc: "Taplets produce +1 Ts/second each.",
+        effect: (g) => { g.technoBoost = true; }
+      },
+      {
+        id: "tacular-clicks", name: "Tacular Clicks", cost: 4000000, bought: false,
+        desc: "Gain +2 Ts per tickle for each TutorT.",
+        effect: (g) => { g.tacularClicks = true; }
+      },
+      {
+        id: "tome-of-t", name: "Tome of T", cost: 12345678, bought: false,
+        desc: "Unlocks the power of the ancient T! +1000 Ts per tickle.",
+        effect: (g) => { g.tomeOfT = true; }
+      }
+    ];
+
+    // Settings
+    let settings = { bgcolor1: "#f0f0ff", bgcolor2: "#fff" };
+
+    function loadSettings() {
+      try {
+        const s = JSON.parse(localStorage.getItem('tTicklerSettings') || "{}");
+        if (s.bgcolor1) settings.bgcolor1 = s.bgcolor1;
+        if (s.bgcolor2) settings.bgcolor2 = s.bgcolor2;
+      } catch {}
+    }
+    function saveSettings() {
+      localStorage.setItem('tTicklerSettings', JSON.stringify(settings));
+    }
+    function applySettings() {
+      const grad = `linear-gradient(135deg, ${settings.bgcolor1} 0%, ${settings.bgcolor2} 100%)`;
+      document.body.style.background = grad;
+      document.documentElement.style.background = grad;
+      document.documentElement.style.setProperty('--main-bg', settings.bgcolor1);
+      document.getElementById('main').style.background = grad;
+      document.getElementById('center').style.background = "none";
+      document.getElementById('leftbar').style.background = "none";
+      document.getElementById('topbar').style.background = "none";
+      document.querySelectorAll('#color-pick-1 .color-option').forEach(el => {
+        if (el.getAttribute('data-color-value') === settings.bgcolor1) el.classList.add('selected');
+        else el.classList.remove('selected');
+      });
+      document.querySelectorAll('#color-pick-2 .color-option').forEach(el => {
+        if (el.getAttribute('data-color-value') === settings.bgcolor2) el.classList.add('selected');
+        else el.classList.remove('selected');
+      });
+    }
+    function renderColorPickers() {
+      let html1 = '', html2 = '';
+      for (const c of COLOR_OPTIONS) {
+        html1 += `<span class="color-option" data-color="${c.key}" data-color-value="${c.value}" title="${c.name}"></span>`;
+        html2 += `<span class="color-option" data-color="${c.key}" data-color-value="${c.value}" title="${c.name}"></span>`;
+      }
+      document.getElementById('color-pick-1').innerHTML = html1;
+      document.getElementById('color-pick-2').innerHTML = html2;
+    }
+    function setupColorPickEvents() {
+      document.querySelectorAll('#color-pick-1 .color-option').forEach(el => {
+        el.onclick = function() {
+          settings.bgcolor1 = el.getAttribute('data-color-value');
+          applySettings();
+          saveSettings();
+        };
+      });
+      document.querySelectorAll('#color-pick-2 .color-option').forEach(el => {
+        el.onclick = function() {
+          settings.bgcolor2 = el.getAttribute('data-color-value');
+          applySettings();
+          saveSettings();
+        };
+      });
+    }
+
+    let game = {
+      ts: 0,
+      lastTick: Date.now(),
+      baseTPC: 1,
+      doubleTick: false,
+      turboTap: false,
+      clickStorm: false,
+      tMagnet: false,
+      tempestActive: false,
+      tempestUntil: 0,
+      titaniumTap: false,
+      tornado: false,
+      transcendence: false,
+      technoBoost: false,
+      tacularClicks: false,
+      tomeOfT: false
+    };
+
+    function saveGame() {
+      localStorage.setItem('tTicklerCCSave', JSON.stringify({
+        ts: game.ts, lastTick: game.lastTick,
+        producers: producers.map(p => ({ cost: p.cost, amount: p.amount })),
+        upgrades: upgrades.map(u => ({ id: u.id, bought: u.bought })),
+        ...game
+      }));
+    }
+    function loadGame() {
+      const saved = localStorage.getItem('tTicklerCCSave');
+      if (saved) {
+        try {
+          const loaded = JSON.parse(saved);
+          game.ts = loaded.ts || 0;
+          game.lastTick = loaded.lastTick || Date.now();
+          if (Array.isArray(loaded.producers)) {
+            loaded.producers.forEach((p, i) => {
+              producers[i].cost = p.cost || producers[i].baseCost;
+              producers[i].amount = p.amount || 0;
+            });
+          }
+          if (Array.isArray(loaded.upgrades)) {
+            loaded.upgrades.forEach(u => {
+              const upg = upgrades.find(x => x.id === u.id);
+              if (upg) upg.bought = u.bought;
+            });
+          }
+          // State for special upgrades:
+          ["doubleTick","turboTap","clickStorm","tMagnet","tempestActive","tempestUntil","titaniumTap","tornado","transcendence","technoBoost","tacularClicks","tomeOfT"].forEach(k=>{
+            if (k in loaded) game[k]=loaded[k];
+          });
+        } catch {}
+      }
+    }
+
+    function getPerSecond() {
+      let factor = 1;
+      if (game.tMagnet) factor *= 1.1;
+      if (game.tornado) factor *= 2;
+      if (game.transcendence) factor *= 1.25;
+      let base = producers.reduce((sum, p, idx) => {
+        let extra = 0;
+        if (game.technoBoost && idx === 0) extra += p.amount * 1; // Taplet
+        return sum + (p.tps * p.amount + extra);
+      }, 0);
+      return base * factor;
+    }
+    function getPerClick() {
+      let base = game.baseTPC;
+      if (game.doubleTick) base *= 2;
+      if (game.turboTap) base += 5;
+      if (game.clickStorm) base += 25;
+      if (game.titaniumTap) base += 50;
+      if (game.tacularClicks) base += (producers[1].amount * 2); // TutorT
+      if (game.tomeOfT) base += 1000;
+      if (game.transcendence) base *= 1.25;
+      // Tempest: temporary x3 per click
+      if (game.tempestActive && Date.now() < game.tempestUntil) {
+        base *= 3;
+      } else if (game.tempestActive && Date.now() >= game.tempestUntil) {
+        game.tempestActive = false;
+      }
+      return Math.floor(base);
+    }
+    const counter = document.getElementById('counter');
+    const stats = document.getElementById('stats');
+    const tMain = document.getElementById('t-main');
+    const cursorsDiv = document.getElementById('cursors');
+
+    function updateProducerUI() {
+      producers.forEach(p => {
+        document.getElementById(`${p.id}-cost`).textContent = `Cost: ${Math.floor(p.cost)}`;
+        document.getElementById(`${p.id}-owned`).textContent = `Owned: ${p.amount}`;
+        const btn = document.getElementById(`${p.id}-btn`);
+        btn.disabled = Math.floor(game.ts) < Math.floor(p.cost);
+      });
+    }
+    function updateUpgradeUI() {
+      const upgList = document.getElementById('upgrade-list');
+      upgList.innerHTML = '';
+      upgrades.forEach((u,i) => {
+        let btn = document.createElement('button');
+        btn.className = 'upgrade';
+        btn.id = u.id+"-btn";
+        btn.disabled = u.bought || game.ts < u.cost || (u.id==="tickle-tempest" && game.tempestActive);
+        btn.innerHTML = `
+          ${u.name} <span class="upg-cost" id="${u.id}-cost">Cost: ${u.bought ? "Bought!" : u.cost}</span><br>
+          ${u.desc}
+          ${u.id==="tickle-tempest"&&game.tempestActive?'<br><span style="color:#1976d2">Active!</span>':''}
+        `;
+        btn.onclick = function() {
+          if (btn.disabled) return;
+          if (game.ts < u.cost) return;
+          game.ts -= u.cost;
+          u.bought = true;
+          if (u.effect) u.effect(game);
+          updateUI();
+          saveGame();
+        };
+        upgList.appendChild(btn);
+      });
+    }
+    function updateUI() {
+      counter.textContent = `Ts: ${Math.floor(game.ts)}`;
+      stats.textContent = `+${getPerClick()} per tickle, +${Math.floor(getPerSecond()*10)/10} per second`;
+      updateProducerUI();
+      updateUpgradeUI();
+      drawCursors();
+    }
+    function tickleT() {
+      game.ts += getPerClick();
+      updateUI();
+      saveGame();
+    }
+    function buyProducer(idx) {
+      const p = producers[idx];
+      if (game.ts >= p.cost) {
+        game.ts -= p.cost;
+        p.amount++;
+        p.cost = Math.floor(p.baseCost * Math.pow(p.costGrowth, p.amount));
+        updateUI();
+        saveGame();
+      }
+    }
+    tMain.addEventListener('click', tickleT);
+    producers.forEach((p, i) => {
+      document.getElementById(`${p.id}-btn`).addEventListener('click', () => buyProducer(i));
+    });
+
+    // Settings modal logic
+    document.getElementById('settings-btn').onclick = function() {
+      document.getElementById('settings-modal').classList.add('open');
+    };
+    document.getElementById('settings-close').onclick = function() {
+      document.getElementById('settings-modal').classList.remove('open');
+    };
+    document.getElementById('settings-modal').onclick = function(e) {
+      if (e.target === this) this.classList.remove('open');
+    };
+
+    // Animated Cursors (orbiting outside the T circle, using OS-like cursor PNG)
+    function drawCursors() {
+      cursorsDiv.innerHTML = "";
+      const pointerCount = producers[0].amount;
+      if (pointerCount === 0) return;
+      // Orbit them around the outside of the T circle (radius = 140)
+      const R = 140;
+      const now = Date.now() / 1000;
+      for (let i = 0; i < pointerCount; ++i) {
+        const baseAngle = ((i / pointerCount) * Math.PI * 2);
+        const swing = Math.sin(now * 1.5 + i * 1.3) * 0.25;
+        const angle = baseAngle + swing;
+        const x = 140 + Math.cos(angle - Math.PI/2) * R;
+        const y = 140 + Math.sin(angle - Math.PI/2) * R;
+        let div = document.createElement("div");
+        div.className = "cursor-anim";
+        div.style.left = `${x-16}px`;
+        div.style.top = `${y-16}px`;
+        div.innerHTML = `<img src="${CURSOR_PNG}" alt="Cursor">`;
+        cursorsDiv.appendChild(div);
+      }
+    }
+
+    function gameLoop() {
+      let now = Date.now();
+      let deltaSec = (now - game.lastTick) / 1000;
+      if (deltaSec > 0.01) {
+        game.ts += getPerSecond() * deltaSec;
+        game.lastTick = now;
+        updateUI();
+        saveGame();
+      } else {
+        drawCursors();
+      }
+      requestAnimationFrame(gameLoop);
+    }
+
+    renderColorPickers();
+    loadSettings();
+    applySettings();
+    setupColorPickEvents();
+    loadGame();
+    updateUI();
+    game.lastTick = Date.now();
+    requestAnimationFrame(gameLoop);
+    setInterval(saveGame, 10000);
+  </script>
+</body>
+</html>
