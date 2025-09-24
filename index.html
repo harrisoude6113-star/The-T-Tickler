@@ -1,62 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>Auto Login Demo</title>
-  <style>
-    body { font-family: Arial, sans-serif; }
-    #loginForm { display: none; }
-    #greeting { display: none; }
-  </style>
-</head>
-<body>
-  <div id="loginForm">
-    <h2>Welcome! Please enter your account name:</h2>
-    <input type="text" id="accountName" placeholder="Enter your name">
-    <button onclick="saveName()">Log In</button>
-  </div>
-  <div id="greeting">
-    <h2 id="welcomeMsg"></h2>
-    <button onclick="logout()">Log out</button>
-  </div>
-
-  <script>
-    // Check if a name is stored
-    function checkLogin() {
-      const name = localStorage.getItem('accountName');
-      if (name) {
-        document.getElementById('greeting').style.display = 'block';
-        document.getElementById('loginForm').style.display = 'none';
-        document.getElementById('welcomeMsg').textContent = `Hello, ${name}!`;
-      } else {
-        document.getElementById('loginForm').style.display = 'block';
-        document.getElementById('greeting').style.display = 'none';
-      }
-    }
-
-    // Save the name to localStorage
-    function saveName() {
-      const name = document.getElementById('accountName').value.trim();
-      if (name) {
-        localStorage.setItem('accountName', name);
-        checkLogin();
-      }
-    }
-
-    // Logout function (for testing)
-    function logout() {
-      localStorage.removeItem('accountName');
-      checkLogin();
-    }
-
-    // Run on page load
-    checkLogin();
-  </script>
-</body>
-</html>
   <meta charset="UTF-8">
   <title>T Tickler</title>
   <style>
@@ -824,3 +768,4 @@
   </script>
 </body>
 </html>
+
